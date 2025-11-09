@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import PoolingPanel, { PoolMember } from "@/components/PoolingPanel";
 import {
   Select,
@@ -10,22 +12,53 @@ import {
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Info } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import type { AdjustedCB } from "@shared/schema";
 
 export default function Pooling() {
   const [selectedYear, setSelectedYear] = useState("2025");
+  const { toast } = useToast();
 
-  // TODO: remove mock data - fetch from GET /compliance/adjusted-cb?year=YYYY
-  const mockMembers: PoolMember[] = [
-    { shipId: 'SHIP001', cbBefore: 1245.8, cbAfter: 800.0 },
-    { shipId: 'SHIP002', cbBefore: -450.2, cbAfter: -200.0 },
-    { shipId: 'SHIP003', cbBefore: 670.5, cbAfter: 400.0 },
-    { shipId: 'SHIP004', cbBefore: -120.0, cbAfter: -50.0 },
-    { shipId: 'SHIP005', cbBefore: 892.3, cbAfter: 600.0 },
-  ];
+  const { data: adjustedCBData = [] } = useQuery<AdjustedCB[]>({
+    queryKey: ['/api/compliance/adjusted-cb', selectedYear],
+    queryFn: async () => {
+      const response = await fetch(`/api/compliance/adjusted-cb?year=${selectedYear}`);
+      if (!response.ok) throw new Error('Failed to fetch compliance data');
+      return response.json();
+    },
+  });
+
+  const members: PoolMember[] = adjustedCBData.map(cb => ({
+    shipId: cb.shipId,
+    cbBefore: cb.cbBefore,
+    cbAfter: cb.cbAfter,
+  }));
+
+  const createPoolMutation = useMutation({
+    mutationFn: async (selectedMembers: PoolMember[]) => {
+      return apiRequest("POST", "/api/pools", {
+        year: parseInt(selectedYear),
+        members: selectedMembers,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/compliance/adjusted-cb', selectedYear] });
+      toast({
+        title: "Success",
+        description: "Pool created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create pool",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleCreatePool = (selectedMembers: PoolMember[]) => {
-    console.log("Creating pool with members:", selectedMembers);
-    // TODO: remove mock functionality - implement POST /pools
+    createPoolMutation.mutate(selectedMembers);
   };
 
   return (
@@ -69,7 +102,7 @@ export default function Pooling() {
         </div>
       </Card>
 
-      <PoolingPanel members={mockMembers} onCreatePool={handleCreatePool} />
+      <PoolingPanel members={members} onCreatePool={handleCreatePool} />
     </div>
   );
 }

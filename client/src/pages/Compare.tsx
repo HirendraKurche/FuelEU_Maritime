@@ -1,64 +1,51 @@
+import { useQuery } from "@tanstack/react-query";
 import ComparisonTable, { ComparisonData } from "@/components/ComparisonTable";
 import ComparisonChart, { ChartData } from "@/components/ComparisonChart";
 import { Card } from "@/components/ui/card";
 import { Info } from "lucide-react";
 
 export default function Compare() {
-  // TODO: remove mock data - fetch from GET /routes/comparison
-  const mockComparisons: ComparisonData[] = [
-    {
-      routeId: 'R002',
-      vesselType: 'BulkCarrier',
-      fuelType: 'LNG',
-      year: 2024,
-      ghgIntensity: 88.0,
-      baselineGhgIntensity: 91.0,
-      percentDiff: -3.30,
-      isCompliant: true,
-      target: 89.3368,
+  const { data: comparisons = [], isLoading } = useQuery<ComparisonData[]>({
+    queryKey: ['/api/routes/comparison'],
+    queryFn: async () => {
+      const response = await fetch('/api/routes/comparison');
+      if (!response.ok) throw new Error('Failed to fetch comparison data');
+      return response.json();
     },
-    {
-      routeId: 'R003',
-      vesselType: 'Tanker',
-      fuelType: 'MGO',
-      year: 2024,
-      ghgIntensity: 93.5,
-      baselineGhgIntensity: 91.0,
-      percentDiff: 2.75,
-      isCompliant: false,
-      target: 89.3368,
-    },
-    {
-      routeId: 'R004',
-      vesselType: 'RoRo',
-      fuelType: 'HFO',
-      year: 2025,
-      ghgIntensity: 89.2,
-      baselineGhgIntensity: 91.0,
-      percentDiff: -1.98,
-      isCompliant: true,
-      target: 89.3368,
-    },
-    {
-      routeId: 'R005',
-      vesselType: 'Container',
-      fuelType: 'LNG',
-      year: 2025,
-      ghgIntensity: 90.5,
-      baselineGhgIntensity: 91.0,
-      percentDiff: -0.55,
-      isCompliant: false,
-      target: 89.3368,
-    },
-  ];
+  });
 
-  // TODO: remove mock data - transform API data
-  const chartData: ChartData[] = mockComparisons.map((comp) => ({
+  const chartData: ChartData[] = comparisons.map((comp) => ({
     routeId: comp.routeId,
     baseline: comp.baselineGhgIntensity,
     actual: comp.ghgIntensity,
     target: comp.target,
   }));
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Loading comparison data...</p>
+      </div>
+    );
+  }
+
+  if (comparisons.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-semibold mb-2">Compliance Comparison</h1>
+          <p className="text-muted-foreground">
+            Compare route emissions against baseline and regulatory targets
+          </p>
+        </div>
+        <Card className="p-8 text-center">
+          <p className="text-muted-foreground">
+            No baseline route set. Please set a baseline in the Routes tab first.
+          </p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -84,7 +71,7 @@ export default function Compare() {
 
       <ComparisonChart data={chartData} />
 
-      <ComparisonTable comparisons={mockComparisons} />
+      <ComparisonTable comparisons={comparisons} />
     </div>
   );
 }

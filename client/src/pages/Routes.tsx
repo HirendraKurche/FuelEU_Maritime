@@ -1,97 +1,78 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import FilterPanel from "@/components/FilterPanel";
 import RoutesTable, { RouteData } from "@/components/RoutesTable";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Routes() {
-  // TODO: remove mock functionality - replace with real API calls
   const [vesselType, setVesselType] = useState("all");
   const [fuelType, setFuelType] = useState("all");
   const [year, setYear] = useState("all");
+  const { toast } = useToast();
 
-  // TODO: remove mock data - fetch from API
-  const mockRoutes: RouteData[] = [
-    {
-      id: '1',
-      routeId: 'R001',
-      vesselType: 'Container',
-      fuelType: 'HFO',
-      year: 2024,
-      ghgIntensity: 91.0,
-      fuelConsumption: 5000,
-      distance: 12000,
-      totalEmissions: 4500,
-      isBaseline: true,
+  const { data: routes = [], isLoading } = useQuery<RouteData[]>({
+    queryKey: ['/api/routes', vesselType, fuelType, year],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (vesselType !== 'all') params.append('vesselType', vesselType);
+      if (fuelType !== 'all') params.append('fuelType', fuelType);
+      if (year !== 'all') params.append('year', year);
+      
+      const queryString = params.toString();
+      const url = queryString ? `/api/routes?${queryString}` : '/api/routes';
+      
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch routes');
+      return response.json();
     },
-    {
-      id: '2',
-      routeId: 'R002',
-      vesselType: 'BulkCarrier',
-      fuelType: 'LNG',
-      year: 2024,
-      ghgIntensity: 88.0,
-      fuelConsumption: 4800,
-      distance: 11500,
-      totalEmissions: 4200,
-    },
-    {
-      id: '3',
-      routeId: 'R003',
-      vesselType: 'Tanker',
-      fuelType: 'MGO',
-      year: 2024,
-      ghgIntensity: 93.5,
-      fuelConsumption: 5100,
-      distance: 12500,
-      totalEmissions: 4700,
-    },
-    {
-      id: '4',
-      routeId: 'R004',
-      vesselType: 'RoRo',
-      fuelType: 'HFO',
-      year: 2025,
-      ghgIntensity: 89.2,
-      fuelConsumption: 4900,
-      distance: 11800,
-      totalEmissions: 4300,
-    },
-    {
-      id: '5',
-      routeId: 'R005',
-      vesselType: 'Container',
-      fuelType: 'LNG',
-      year: 2025,
-      ghgIntensity: 90.5,
-      fuelConsumption: 4950,
-      distance: 11900,
-      totalEmissions: 4400,
-    },
-  ];
+  });
 
-  // TODO: remove mock functionality - implement real filtering
-  const filteredRoutes = mockRoutes.filter((route) => {
-    if (vesselType !== "all" && route.vesselType !== vesselType) return false;
-    if (fuelType !== "all" && route.fuelType !== fuelType) return false;
-    if (year !== "all" && route.year.toString() !== year) return false;
-    return true;
+  const setBaselineMutation = useMutation({
+    mutationFn: async (routeId: string) => {
+      return apiRequest("POST", `/api/routes/${routeId}/baseline`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0] === '/api/routes' ||
+          query.queryKey[0] === '/api/routes/comparison'
+      });
+      toast({
+        title: "Baseline Set",
+        description: "Route baseline has been updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to set baseline",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleApplyFilters = () => {
-    console.log("Applying filters:", { vesselType, fuelType, year });
-    // TODO: remove mock functionality - trigger API call with filters
+    // Filters are already applied via query key
   };
 
   const handleClearFilters = () => {
     setVesselType("all");
     setFuelType("all");
     setYear("all");
-    console.log("Filters cleared");
   };
 
   const handleSetBaseline = (routeId: string) => {
-    console.log("Setting baseline for route:", routeId);
-    // TODO: remove mock functionality - implement POST /routes/:id/baseline
+    setBaselineMutation.mutate(routeId);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Loading routes...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -113,7 +94,7 @@ export default function Routes() {
         onClear={handleClearFilters}
       />
 
-      <RoutesTable routes={filteredRoutes} onSetBaseline={handleSetBaseline} />
+      <RoutesTable routes={routes} onSetBaseline={handleSetBaseline} />
     </div>
   );
 }

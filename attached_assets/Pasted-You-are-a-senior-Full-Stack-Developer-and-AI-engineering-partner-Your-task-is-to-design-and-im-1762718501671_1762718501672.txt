@@ -1,0 +1,217 @@
+You are a senior Full-Stack Developer and AI engineering partner.  
+Your task is to **design and implement** a complete, production-grade web development project according to the detailed FuelEU Maritime Full-Stack Developer Assignment below.
+
+You must generate **frontend (React + TypeScript + Tailwind)**, **backend (Node.js + TypeScript + PostgreSQL)**, and **AI documentation markdowns** in clean hexagonal architecture (Ports & Adapters).  
+Use deep reasoning and agent-assisted clarity — ensure the codebase is structured, documented, and testable.
+
+─────────────────────────────────────────────
+# PROJECT: FuelEU Maritime — Compliance Platform
+─────────────────────────────────────────────
+
+### 🎯 Objective
+Implement a minimal but clean and modular **Fuel EU Maritime compliance module** that calculates route emissions, compliance balance (CB), banking, and pooling.
+
+Deliverables:
+- `/frontend` React + TypeScript + TailwindCSS dashboard
+- `/backend` Node.js + TypeScript + PostgreSQL APIs
+- Clean Hexagonal Architecture
+- Documentation: `README.md`, `AGENT_WORKFLOW.md`, `REFLECTION.md`
+
+─────────────────────────────────────────────
+# ⚙️ TECH STACK
+Frontend: React, TypeScript, TailwindCSS  
+Backend: Node.js, TypeScript, Express, PostgreSQL (Prisma/Knex)  
+Architecture: Hexagonal (Ports & Adapters / Clean Architecture)  
+Testing: Jest / React Testing Library / Supertest  
+Docs: Markdown  
+AI Tools: GitHub Copilot, Cursor Agent, Claude Code, GPT-5
+
+─────────────────────────────────────────────
+# 📁 DIRECTORY STRUCTURE
+/frontend
+src/
+core/
+domain/
+application/
+ports/
+adapters/
+ui/
+infrastructure/
+shared/
+pages/
+Routes.tsx
+Compare.tsx
+Banking.tsx
+Pooling.tsx
+
+/backend
+src/
+core/
+domain/
+application/
+ports/
+adapters/
+inbound/http/
+outbound/postgres/
+infrastructure/
+db/
+server/
+shared/
+
+markdown
+Copy code
+
+─────────────────────────────────────────────
+# 🔷 FRONTEND REQUIREMENTS — React + Tailwind
+### Tabs to Implement
+1. **Routes Tab**
+   - Fetch `/routes`
+   - Columns: routeId, vesselType, fuelType, year, ghgIntensity, fuelConsumption, distance, totalEmissions
+   - “Set Baseline” button → `POST /routes/:routeId/baseline`
+   - Filters: vesselType, fuelType, year
+
+2. **Compare Tab**
+   - Fetch `/routes/comparison`
+   - Target = 89.3368 gCO₂e/MJ (2% below 91.16)
+   - Formula: `percentDiff = ((comparison / baseline) − 1) × 100`
+   - Display: ghgIntensity, % difference, compliant ✅ / ❌
+   - Include Recharts chart
+
+3. **Banking Tab**
+   - `GET /compliance/cb?year=YYYY`
+   - `POST /banking/bank` and `POST /banking/apply`
+   - Show KPIs: cb_before, applied, cb_after
+   - Disable actions if CB ≤ 0
+
+4. **Pooling Tab**
+   - `GET /compliance/adjusted-cb?year=YYYY`
+   - `POST /pools`
+   - Rules:
+     - Sum(adjustedCB) ≥ 0
+     - Deficit ship cannot exit worse
+     - Surplus ship cannot exit negative
+   - Show member list, before/after CB, Pool sum indicator (red/green)
+   - Disable invalid pool creation
+
+─────────────────────────────────────────────
+# 🔶 BACKEND REQUIREMENTS — Node.js + PostgreSQL
+### Responsibilities
+- Manage Routes, Comparison, Compliance Balance (CB)
+- Handle Banking and Pooling logic
+- Provide REST endpoints for frontend dashboard
+
+### Endpoints
+| Endpoint | Method | Description |
+|-----------|---------|-------------|
+| `/routes` | GET | Fetch all routes |
+| `/routes/:id/baseline` | POST | Mark a route as baseline |
+| `/routes/comparison` | GET | Return baseline vs others |
+| `/compliance/cb` | GET | Compute and return compliance balance |
+| `/banking/bank` | POST | Bank surplus CB |
+| `/banking/apply` | POST | Apply banked surplus |
+| `/pools` | POST | Create pool and return adjusted CBs |
+
+### Database Schema
+| Table | Columns | Description |
+| --- | --- | --- |
+| routes | id, route_id, year, ghg_intensity, fuel_consumption, distance, total_emissions, is_baseline | Route data |
+| ship_compliance | id, ship_id, year, cb_gco2eq | Compliance balance |
+| bank_entries | id, ship_id, year, amount_gco2eq | Banked surpluses |
+| pools | id, year, created_at | Pool registry |
+| pool_members | pool_id, ship_id, cb_before, cb_after | Member allocations |
+
+### Core Formula
+Target Intensity (2025) = 89.3368 gCO₂e/MJ
+Energy in Scope (MJ) = fuelConsumption × 41,000
+Compliance Balance (CB) = (Target − Actual) × EnergyInScope
+Positive CB → Surplus; Negative → Deficit
+
+yaml
+Copy code
+
+─────────────────────────────────────────────
+# 📊 MOCK DATA (Seed or API)
+| routeId | vesselType | fuelType | year | ghgIntensity | fuelConsumption (t) | distance (km) | totalEmissions (t) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| R001 | Container | HFO | 2024 | 91.0 | 5000 | 12000 | 4500 |
+| R002 | BulkCarrier | LNG | 2024 | 88.0 | 4800 | 11500 | 4200 |
+| R003 | Tanker | MGO | 2024 | 93.5 | 5100 | 12500 | 4700 |
+| R004 | RoRo | HFO | 2025 | 89.2 | 4900 | 11800 | 4300 |
+| R005 | Container | LNG | 2025 | 90.5 | 4950 | 11900 | 4400 |
+
+─────────────────────────────────────────────
+# 🧪 TESTING REQUIREMENTS
+✅ Unit Tests — ComputeCB, Comparison, Banking, Pooling  
+✅ Integration Tests — Routes and Compliance Endpoints  
+✅ Edge Cases — Negative CB, over-banking, invalid pool creation
+
+─────────────────────────────────────────────
+# 🧱 AI DOCUMENTATION FILES
+
+### 1. `AGENT_WORKFLOW.md`
+Document AI usage:
+- Agents used (Copilot, Cursor, Claude Code, GPT-5)
+- Prompts + outputs + corrections
+- Validation and refinements
+- Observations (where AI saved time / failed)
+- Best practices used (e.g., Cursor tasks, Copilot completions)
+
+### 2. `README.md`
+Include:
+- Overview and architecture summary
+- Setup, run, test instructions
+- API endpoints table
+- Screenshots or example responses
+
+### 3. `REFLECTION.md`
+Include:
+- Lessons learned using AI tools
+- Efficiency gained vs manual coding
+- Next iteration improvements
+
+─────────────────────────────────────────────
+# ✅ EVALUATION CHECKLIST
+| Category | Criteria |
+| --- | --- |
+| Architecture | Clean hexagonal, ports/adapters separation |
+| Functionality | Routes, Compare, Banking, Pooling work |
+| Code Quality | TS strict, ESLint/Prettier, clean naming |
+| Testing | Unit/integration implemented |
+| Documentation | README + agent markdowns complete |
+| AI Use | Transparent logs and workflow |
+| UI | Responsive and accessible |
+
+─────────────────────────────────────────────
+# 🧠 TASK FOR YOU (AI)
+Generate:
+1. The **complete repository scaffold** for `/frontend` and `/backend`
+2. Example TypeScript modules, entities, ports, adapters, and hooks
+3. Example API handler for `/routes` and `/compliance`
+4. Dashboard components for each tab (Tailwind styled)
+5. Sample `.env` and database migration files
+6. Example unit test files
+7. Documentation templates (`README.md`, `AGENT_WORKFLOW.md`, `REFLECTION.md`)
+8. Commands to run project locally (`npm run dev`, `npm run test`)
+9. Optional Dockerfile + docker-compose.yml (Postgres + backend + frontend)
+
+Ensure:
+- Consistent type definitions between frontend and backend (DTO alignment)
+- Fully typed clean code
+- Each module has clear domain boundary
+- All logic matches FuelEU Maritime compliance math
+
+─────────────────────────────────────────────
+# 💡 EXECUTION MODE
+Use **deep research + structured reasoning**.  
+First, generate the **directory structure** → then scaffold backend → then frontend → then docs.  
+Use clean architecture conventions (core independent of frameworks).
+
+─────────────────────────────────────────────
+# OUTPUT FORMAT
+Produce your output as a **structured directory tree** with representative code blocks for each main file.  
+Clearly label each file section with ```filename``` syntax.
+
+─────────────────────────────────────────────
+# GOAL
+Deliver a **complete, well-structured, AI-assisted FuelEU Maritime compliance platform**, suitable for GitHub submission — with backend, frontend, and markdown documentation included.
+⚡ How to Use

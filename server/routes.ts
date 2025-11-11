@@ -180,6 +180,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Health check used by Render and load balancers
+  app.get("/healthz", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

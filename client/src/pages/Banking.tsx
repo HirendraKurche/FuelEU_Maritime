@@ -21,9 +21,8 @@ export default function Banking() {
   const { data: adjustedCBData = [] } = useQuery<AdjustedCB[]>({
     queryKey: ['/api/compliance/adjusted-cb', selectedYear],
     queryFn: async () => {
-      const response = await fetch(`/api/compliance/adjusted-cb?year=${selectedYear}`);
-      if (!response.ok) throw new Error('Failed to fetch compliance data');
-      return response.json();
+      const svc = await import('../core/services/complianceService');
+      return svc.fetchAdjustedCB(selectedYear);
     },
   });
 

@@ -5,12 +5,11 @@ import { Card } from "@/components/ui/card";
 import { Info } from "lucide-react";
 
 export default function Compare() {
-  const { data: comparisons = [], isLoading } = useQuery<ComparisonData[]>({
+  const { data: comparisons = [], isLoading, error } = useQuery<ComparisonData[]>({
     queryKey: ['/api/routes/comparison'],
     queryFn: async () => {
-      const response = await fetch('/api/routes/comparison');
-      if (!response.ok) throw new Error('Failed to fetch comparison data');
-      return response.json();
+      const svc = await import('../core/services/complianceService');
+      return svc.fetchComparison();
     },
   });
 
@@ -25,6 +24,16 @@ export default function Compare() {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-muted-foreground">Loading comparison data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Card className="p-8 text-center">
+          <p className="text-destructive">Error loading comparison data: {error.message}</p>
+        </Card>
       </div>
     );
   }

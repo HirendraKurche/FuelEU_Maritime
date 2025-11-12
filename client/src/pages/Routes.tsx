@@ -14,17 +14,8 @@ export default function Routes() {
   const { data: routes = [], isLoading } = useQuery<RouteData[]>({
     queryKey: ['/api/routes', vesselType, fuelType, year],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (vesselType !== 'all') params.append('vesselType', vesselType);
-      if (fuelType !== 'all') params.append('fuelType', fuelType);
-      if (year !== 'all') params.append('year', year);
-      
-      const queryString = params.toString();
-      const url = queryString ? `/api/routes?${queryString}` : '/api/routes';
-      
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch routes');
-      return response.json();
+      const result = await import('../core/services/routeService');
+      return result.fetchRoutes({ vesselType, fuelType, year });
     },
   });
 

@@ -4,9 +4,12 @@ import path from 'path';
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
+    // default to jsdom so frontend/component tests have DOM APIs available.
+    // Server tests will explicitly set a node environment when needed.
+    environment: 'jsdom',
+    // common setup file (will be resilient to environment)
     setupFiles: ['./test/setup.ts'],
-    include: ['**/*.test.ts'],
+    include: ['**/*.test.ts', '**/*.test.tsx'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

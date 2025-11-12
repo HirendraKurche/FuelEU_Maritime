@@ -1,11 +1,11 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
-
 import RoutesPage from './Routes';
 import ComparePage from './Compare';
 import BankingPage from './Banking';
 import PoolingPage from './Pooling';
 
-describe('Frontend page modules smoke tests', () => {
+describe('Pages smoke tests', () => {
   it('Routes page should export a component', () => {
     expect(RoutesPage).toBeTruthy();
   });

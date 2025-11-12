@@ -72,7 +72,11 @@ export default function PoolingPanel({ members, onCreatePool }: PoolingPanelProp
         </div>
 
         <Button
-          onClick={() => onCreatePool(selectedMembers)}
+          onClick={() => {
+            if (!canCreatePool) return;
+            if (!window.confirm('Create pool with selected members?')) return;
+            onCreatePool(selectedMembers);
+          }}
           disabled={!canCreatePool}
           className="w-full"
           data-testid="button-create-pool"

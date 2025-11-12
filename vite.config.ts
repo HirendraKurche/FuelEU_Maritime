@@ -32,12 +32,16 @@ export default defineConfig({
         "react-dom": path.resolve(__dirname, "node_modules", "react-dom"),
       },
     },
-    root: path.resolve(__dirname, "client"),
-    build: {
-      outDir: path.resolve(__dirname, "dist/public"),
-      emptyOutDir: true,
-      chunkSizeWarningLimit: 1200,
+  root: path.resolve(__dirname, "client"),
+  build: {
+    outDir: path.resolve(__dirname, "dist/public"),
+    emptyOutDir: true,
+    chunkSizeWarningLimit: 1200,
+    manifest: true,
+    rollupOptions: {
+      input: path.resolve(__dirname, "client/index.html"),
     },
+  },
   server: {
     fs: {
       strict: true,

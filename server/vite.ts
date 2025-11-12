@@ -96,11 +96,29 @@ export function serveStatic(app: Express) {
   try {
     const files = fs.readdirSync(distPath);
     console.log(`[serveStatic] Files in ${distPath}:`, files.slice(0, 10));
+    
+    // List assets directory contents
+    const assetsPath = path.join(distPath, 'assets');
+    if (fs.existsSync(assetsPath)) {
+      const assetFiles = fs.readdirSync(assetsPath);
+      console.log(`[serveStatic] Assets found (${assetFiles.length} files):`, assetFiles.slice(0, 5));
+    }
   } catch (e) {
     console.error(`[serveStatic] Error reading directory:`, e);
   }
 
-  app.use(express.static(distPath));
+  // Serve static files with proper cache headers
+  app.use(express.static(distPath, {
+    maxAge: '1y',
+    immutable: true,
+    setHeaders: (res, filePath) => {
+      // Don't cache HTML files
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    }
+  }));
+  
   console.log(`[serveStatic] Static middleware registered for: ${distPath}`);
 
   // Only serve index.html for routes that don't match static files or API routes

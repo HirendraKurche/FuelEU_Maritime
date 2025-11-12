@@ -30,10 +30,25 @@ export default defineConfig({
       },
     },
     root: path.resolve(__dirname, "client"),
-    build: {
-      outDir: path.resolve(__dirname, "dist/public"),
-      emptyOutDir: true,
-    },
+      build: {
+        outDir: path.resolve(__dirname, "dist/public"),
+        emptyOutDir: true,
+        // Increase warning limit slightly and add manualChunks to split vendor code
+        chunkSizeWarningLimit: 1200,
+        rollupOptions: {
+          output: {
+            manualChunks(id: string) {
+              if (id.includes('node_modules')) {
+                if (id.includes('react')) return 'vendor.react';
+                if (id.includes('@tanstack')) return 'vendor.tanstack';
+                if (id.includes('chart.js') || id.includes('recharts') || id.includes('d3')) return 'vendor.charts';
+                if (id.includes('lodash')) return 'vendor.lodash';
+                return 'vendor';
+              }
+            },
+          },
+        },
+      },
   server: {
     fs: {
       strict: true,

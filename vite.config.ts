@@ -39,7 +39,10 @@ export default defineConfig({
           output: {
             manualChunks(id: string) {
               if (id.includes('node_modules')) {
-                if (id.includes('react')) return 'vendor.react';
+                // Keep React and React-DOM together to avoid duplicate instances
+                if (id.includes('react') || id.includes('react-dom')) {
+                  return 'vendor.react';
+                }
                 if (id.includes('@tanstack')) return 'vendor.tanstack';
                 if (id.includes('chart.js') || id.includes('recharts') || id.includes('d3')) return 'vendor.charts';
                 if (id.includes('lodash')) return 'vendor.lodash';

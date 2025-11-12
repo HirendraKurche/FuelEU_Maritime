@@ -16,7 +16,14 @@ const NotFound = lazy(() => import("@/pages/not-found"));
 function Router() {
   return (
     // Suspense wraps the switch so lazy pages render with a fallback while loading
-    <Suspense fallback={<div className="py-8 text-center">Loading...</div>}>
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
       <Switch>
         <Route path="/" component={Routes} />
         <Route path="/compare" component={Compare} />

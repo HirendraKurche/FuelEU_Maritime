@@ -4,6 +4,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export interface PoolMember {
   shipId: string;
@@ -18,6 +28,7 @@ interface PoolingPanelProps {
 
 export default function PoolingPanel({ members, onCreatePool }: PoolingPanelProps) {
   const [selectedShips, setSelectedShips] = useState<Set<string>>(new Set());
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const toggleShip = (shipId: string) => {
     const newSelected = new Set(selectedShips);
@@ -72,11 +83,7 @@ export default function PoolingPanel({ members, onCreatePool }: PoolingPanelProp
         </div>
 
         <Button
-          onClick={() => {
-            if (!canCreatePool) return;
-            if (!window.confirm('Create pool with selected members?')) return;
-            onCreatePool(selectedMembers);
-          }}
+          onClick={() => setShowConfirmDialog(true)}
           disabled={!canCreatePool}
           className="w-full"
           data-testid="button-create-pool"
@@ -99,6 +106,27 @@ export default function PoolingPanel({ members, onCreatePool }: PoolingPanelProp
           </div>
         )}
       </Card>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Create Pool</AlertDialogTitle>
+            <AlertDialogDescription>
+              Create pool with {selectedMembers.length} selected member{selectedMembers.length !== 1 ? 's' : ''}?
+              This will redistribute the compliance balance among the selected ships.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              onCreatePool(selectedMembers);
+              setShowConfirmDialog(false);
+            }}>
+              Create Pool
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">

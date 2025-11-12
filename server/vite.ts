@@ -69,29 +69,43 @@ export function serveStatic(app: Express) {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   // In production, after esbuild bundles to dist/index.js,
   // __dirname will be 'dist', so we need to look for 'public' subdirectory
-  const distPath = path.resolve(__dirname, "public");
+  let distPath = path.resolve(__dirname, "public");
+
+  console.log(`[serveStatic] Initial distPath: ${distPath}`);
+  console.log(`[serveStatic] __dirname: ${__dirname}`);
+  console.log(`[serveStatic] process.cwd(): ${process.cwd()}`);
 
   if (!fs.existsSync(distPath)) {
     // Fallback: try resolving from process.cwd()
     const fallbackPath = path.resolve(process.cwd(), "dist", "public");
-    if (fs.existsSync(fallbackPath)) {
-      console.log(`Using fallback static path: ${fallbackPath}`);
-      app.use(express.static(fallbackPath));
-      app.use("*", (_req, res) => {
-        res.sendFile(path.resolve(fallbackPath, "index.html"));
-      });
-      return;
-    }
+    console.log(`[serveStatic] distPath not found, trying fallback: ${fallbackPath}`);
     
-    throw new Error(
-      `Could not find the build directory: ${distPath} or ${fallbackPath}, make sure to build the client first`,
-    );
+    if (fs.existsSync(fallbackPath)) {
+      console.log(`[serveStatic] ✓ Using fallback static path: ${fallbackPath}`);
+      distPath = fallbackPath;
+    } else {
+      const errorMsg = `Could not find the build directory:\n- Tried: ${distPath}\n- Tried: ${fallbackPath}\nMake sure to build the client first`;
+      console.error(`[serveStatic] ✗ ${errorMsg}`);
+      throw new Error(errorMsg);
+    }
+  } else {
+    console.log(`[serveStatic] ✓ Using distPath: ${distPath}`);
+  }
+
+  // List files in distPath for debugging
+  try {
+    const files = fs.readdirSync(distPath);
+    console.log(`[serveStatic] Files in ${distPath}:`, files.slice(0, 10));
+  } catch (e) {
+    console.error(`[serveStatic] Error reading directory:`, e);
   }
 
   app.use(express.static(distPath));
+  console.log(`[serveStatic] Static middleware registered for: ${distPath}`);
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
+  console.log(`[serveStatic] SPA fallback registered`);
 }

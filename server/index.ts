@@ -68,15 +68,17 @@ app.use((req, res, next) => {
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
+  // Default to 5000 if not specified.
   const port = parseInt(process.env.PORT || '5000', 10);
-  // Allow configuring bind address via BIND_ADDR, default to 0.0.0.0 so hosting
-  // platforms (Render, Heroku, etc.) can route to the process.
-  const host = process.env.BIND_ADDR || '0.0.0.0';
+
+  // Choose bind address:
+  // - In development bind to 127.0.0.1 so http://localhost:PORT works in browsers
+  // - In production default to 0.0.0.0 so hosting platforms can route traffic
+  const host = process.env.BIND_ADDR || (app.get('env') === 'development' ? '127.0.0.1' : '0.0.0.0');
 
   server.listen(port, host, () => {
-    log(`serving on http://${host}:${port}`);
+    // For developer convenience, show localhost in the log if host is 0.0.0.0
+    const displayHost = host === '0.0.0.0' ? 'localhost' : host;
+    log(`serving on http://${displayHost}:${port} (bound to ${host})`);
   });
 })();

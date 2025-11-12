@@ -33,30 +33,11 @@ export default defineConfig({
       },
     },
     root: path.resolve(__dirname, "client"),
-      build: {
-        outDir: path.resolve(__dirname, "dist/public"),
-        emptyOutDir: true,
-        chunkSizeWarningLimit: 1200,
-        rollupOptions: {
-          output: {
-            manualChunks(id: string) {
-              if (id.includes('node_modules')) {
-                // Keep all React-related packages together
-                if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
-                  return 'vendor.react';
-                }
-                // Group UI libraries that might depend on React
-                if (id.includes('@radix-ui') || id.includes('framer-motion')) {
-                  return 'vendor.ui';
-                }
-                if (id.includes('@tanstack')) return 'vendor.tanstack';
-                if (id.includes('recharts') || id.includes('d3')) return 'vendor.charts';
-                return 'vendor';
-              }
-            },
-          },
-        },
-      },
+    build: {
+      outDir: path.resolve(__dirname, "dist/public"),
+      emptyOutDir: true,
+      chunkSizeWarningLimit: 1200,
+    },
   server: {
     fs: {
       strict: true,

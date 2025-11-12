@@ -67,11 +67,24 @@ export async function setupVite(app: Express, server: Server) {
 
 export function serveStatic(app: Express) {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  // In production, after esbuild bundles to dist/index.js,
+  // __dirname will be 'dist', so we need to look for 'public' subdirectory
   const distPath = path.resolve(__dirname, "public");
 
   if (!fs.existsSync(distPath)) {
+    // Fallback: try resolving from process.cwd()
+    const fallbackPath = path.resolve(process.cwd(), "dist", "public");
+    if (fs.existsSync(fallbackPath)) {
+      console.log(`Using fallback static path: ${fallbackPath}`);
+      app.use(express.static(fallbackPath));
+      app.use("*", (_req, res) => {
+        res.sendFile(path.resolve(fallbackPath, "index.html"));
+      });
+      return;
+    }
+    
     throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+      `Could not find the build directory: ${distPath} or ${fallbackPath}, make sure to build the client first`,
     );
   }
 
